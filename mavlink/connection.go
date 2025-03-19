@@ -73,3 +73,7 @@ func (c *Connection) Write(msg message.Message) error {
 	}
 	return nil
 }
+
+func (c *Connection) Info() string {
+	return fmt.Sprintf("opened: %v, parse errors: %d, last heartbeat: %s", c.opened, c.parseErrorCounter, c.lastHeartbeat.Format(time.DateTime))
+}

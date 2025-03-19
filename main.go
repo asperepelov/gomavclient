@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-// this example shows how to:
-// 1) create a node which communicates with a serial endpoint
-// 2) print selected incoming messages
-
 func main() {
 	//endpointConf := gomavlib.EndpointSerial{Device: "com4", Baud: 57600} // Serial конфигурация
 	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
@@ -34,9 +30,7 @@ func main() {
 	go func() {
 		for {
 			defer wg.Done()
-			fmt.Print("Opened: ", connection.IsOpened(), "\n")
-			fmt.Print("ParseErrorCounter: ", connection.ParseErrorCounter(), "\n")
-			fmt.Print("LastHeartbeat: ", connection.LastHeartbeat(), "\n")
+			fmt.Println(connection.Info())
 			time.Sleep(5 * time.Second)
 		}
 	}()

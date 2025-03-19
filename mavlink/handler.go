@@ -31,11 +31,13 @@ func (c *Connection) HandleEvents() {
 			case *ardupilotmega.MessageHeartbeat:
 				c.handleHeartbeat(msg)
 
-			// if frm.Message() is a *ardupilotmega.MessageServoOutputRaw, access its fields
-			case *ardupilotmega.MessageServoOutputRaw:
-				log.Printf("received servo output with values: %d %d %d %d %d %d %d %d\n",
-					msg.Servo1Raw, msg.Servo2Raw, msg.Servo3Raw, msg.Servo4Raw,
-					msg.Servo5Raw, msg.Servo6Raw, msg.Servo7Raw, msg.Servo8Raw)
+			//case *ardupilotmega.MessageServoOutputRaw:
+			//log.Printf("received servo output with values: %d %d %d %d %d %d %d %d\n",
+			//	msg.Servo1Raw, msg.Servo2Raw, msg.Servo3Raw, msg.Servo4Raw,
+			//	msg.Servo5Raw, msg.Servo6Raw, msg.Servo7Raw, msg.Servo8Raw)
+
+			case *ardupilotmega.MessageParamValue:
+				c.handleParamValue(msg)
 			}
 		}
 	}
@@ -58,4 +60,8 @@ func (c *Connection) handleParseError(event gomavlib.EventParseError) {
 
 func (c *Connection) handleHeartbeat(event *ardupilotmega.MessageHeartbeat) {
 	c.lastHeartbeat = time.Now()
+}
+
+func (c *Connection) handleParamValue(event *ardupilotmega.MessageParamValue) {
+	log.Printf("received param value: %s = %f\n", event.ParamId, event.ParamValue)
 }
