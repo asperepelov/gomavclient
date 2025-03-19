@@ -5,10 +5,13 @@ import (
 	"github.com/bluenviron/gomavlib/v3"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"github.com/bluenviron/gomavlib/v3/pkg/message"
+	"time"
 )
 
 type Connection struct {
-	opened bool // Соединение открыто
+	opened            bool      // Соединение открыто
+	parseErrorCounter int       // Счетчик ошибок парсинга
+	lastHeartbeat     time.Time // Время последнего heartbeat
 
 	endpointConf gomavlib.EndpointConf // Конфигурация соединения
 	node         *gomavlib.Node
@@ -23,6 +26,14 @@ func NewConnection(endpoint gomavlib.EndpointConf) *Connection {
 
 func (c *Connection) IsOpened() bool {
 	return c.opened
+}
+
+func (c *Connection) LastHeartbeat() time.Time {
+	return c.lastHeartbeat
+}
+
+func (c *Connection) ParseErrorCounter() int {
+	return c.parseErrorCounter
 }
 
 func (c *Connection) Open() error {

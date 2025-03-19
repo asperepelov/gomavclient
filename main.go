@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bluenviron/gomavlib/v3"
-	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"gomavclient/mavlink"
 	"sync"
+	"time"
 )
 
 // this example shows how to:
@@ -13,27 +14,13 @@ import (
 
 func main() {
 	//endpointConf := gomavlib.EndpointSerial{Device: "com4", Baud: 57600} // Serial конфигурация
-	//endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
-	//connection := mavlink.NewConnection(endpointConf)
-	//err := connection.Open()
-	//if err != nil {
-	//	panic(err)
-	//}
-	//defer connection.Close()
-
-	node, err := gomavlib.NewNode(gomavlib.NodeConf{
-		Endpoints: []gomavlib.EndpointConf{
-			gomavlib.EndpointTCPClient{"127.0.0.1:5601"},
-			//gomavlib.EndpointSerial{Device: "com4", Baud: 57600},
-		},
-		Dialect:     ardupilotmega.Dialect,
-		OutVersion:  gomavlib.V2, // change to V1 if you're unable to communicate with the target
-		OutSystemID: 10,
-	})
+	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
+	connection := mavlink.NewConnection(endpointConf)
+	err := connection.Open()
 	if err != nil {
 		panic(err)
 	}
-	defer node.Close()
+	defer connection.Close()
 
 	wg := sync.WaitGroup{}
 	wg.Add(2)
@@ -41,10 +28,18 @@ func main() {
 	// Горутина для обработки входящих сообщений
 	go func() {
 		defer wg.Done()
-		//connection.HandleEvents()
-		mavlink.HandleEvents(node)
+		connection.HandleEvents()
+	}()
+
+	go func() {
+		for {
+			defer wg.Done()
+			fmt.Print("Opened: ", connection.IsOpened(), "\n")
+			fmt.Print("ParseErrorCounter: ", connection.ParseErrorCounter(), "\n")
+			fmt.Print("LastHeartbeat: ", connection.LastHeartbeat(), "\n")
+			time.Sleep(5 * time.Second)
+		}
 	}()
 
 	wg.Wait()
-
 }

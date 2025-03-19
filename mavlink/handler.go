@@ -4,6 +4,7 @@ import (
 	"github.com/bluenviron/gomavlib/v3"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"log"
+	"time"
 )
 
 // HandleEvents обработка событий
@@ -12,14 +13,14 @@ func (c *Connection) HandleEvents() {
 		switch ee := event.(type) {
 
 		case *gomavlib.EventParseError: // Ошибка данных
-			handleParseError(*ee)
+			c.handleParseError(*ee)
 			continue
 
 		case *gomavlib.EventChannelOpen: // Открытие канала
-			handleChannelOpen(*ee)
+			c.handleChannelOpen(*ee)
 
 		case *gomavlib.EventChannelClose: // Закрытие канала
-			handleChannelClose(*ee)
+			c.handleChannelClose(*ee)
 			continue
 		}
 
@@ -28,7 +29,7 @@ func (c *Connection) HandleEvents() {
 			switch msg := frm.Message().(type) {
 
 			case *ardupilotmega.MessageHeartbeat:
-				handleHeartbeat(msg)
+				c.handleHeartbeat(msg)
 
 			// if frm.Message() is a *ardupilotmega.MessageServoOutputRaw, access its fields
 			case *ardupilotmega.MessageServoOutputRaw:
@@ -40,51 +41,21 @@ func (c *Connection) HandleEvents() {
 	}
 }
 
-func HandleEvents(node *gomavlib.Node) {
-	for event := range node.Events() {
-		switch ee := event.(type) {
-
-		case *gomavlib.EventParseError: // Ошибка данных
-			handleParseError(*ee)
-			continue
-
-		case *gomavlib.EventChannelOpen: // Открытие канала
-			handleChannelOpen(*ee)
-
-		case *gomavlib.EventChannelClose: // Закрытие канала
-			handleChannelClose(*ee)
-			continue
-		}
-
-		// Событие кадр данных
-		if frm, ok := event.(*gomavlib.EventFrame); ok {
-			switch msg := frm.Message().(type) {
-
-			case *ardupilotmega.MessageHeartbeat:
-				handleHeartbeat(msg)
-
-			// if frm.Message() is a *ardupilotmega.MessageServoOutputRaw, access its fields
-			case *ardupilotmega.MessageServoOutputRaw:
-				log.Printf("received servo output with values: %d %d %d %d %d %d %d %d\n",
-					msg.Servo1Raw, msg.Servo2Raw, msg.Servo3Raw, msg.Servo4Raw,
-					msg.Servo5Raw, msg.Servo6Raw, msg.Servo7Raw, msg.Servo8Raw)
-			}
-		}
-	}
-}
-
-func handleChannelClose(event gomavlib.EventChannelClose) {
+func (c *Connection) handleChannelClose(event gomavlib.EventChannelClose) {
+	c.opened = false
 	log.Printf("channel closed: %v\n", event)
 }
 
-func handleChannelOpen(event gomavlib.EventChannelOpen) {
+func (c *Connection) handleChannelOpen(event gomavlib.EventChannelOpen) {
+	c.opened = true
 	log.Printf("channel opened: %v\n", event)
 }
 
-func handleParseError(event gomavlib.EventParseError) {
+func (c *Connection) handleParseError(event gomavlib.EventParseError) {
+	c.parseErrorCounter++
 	log.Printf("parse error: %v\n", event)
 }
 
-func handleHeartbeat(event *ardupilotmega.MessageHeartbeat) {
-	log.Printf("received heartbeat (type %d)\n", event.Type)
+func (c *Connection) handleHeartbeat(event *ardupilotmega.MessageHeartbeat) {
+	c.lastHeartbeat = time.Now()
 }
