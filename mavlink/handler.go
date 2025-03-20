@@ -58,10 +58,12 @@ func (c *Connection) handleParseError(event gomavlib.EventParseError) {
 	log.Printf("parse error: %v\n", event)
 }
 
-func (c *Connection) handleHeartbeat(event *ardupilotmega.MessageHeartbeat) {
+func (c *Connection) handleHeartbeat(msg *ardupilotmega.MessageHeartbeat) {
 	c.lastHeartbeat = time.Now()
 }
 
-func (c *Connection) handleParamValue(event *ardupilotmega.MessageParamValue) {
-	log.Printf("received param value: %s = %f\n", event.ParamId, event.ParamValue)
+func (c *Connection) handleParamValue(msg *ardupilotmega.MessageParamValue) {
+	if c.paramManager != nil {
+		c.paramManager.Update(msg.ParamId, msg.ParamValue)
+	}
 }

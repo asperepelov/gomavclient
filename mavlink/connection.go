@@ -15,12 +15,22 @@ type Connection struct {
 
 	endpointConf gomavlib.EndpointConf // Конфигурация соединения
 	node         *gomavlib.Node
+
+	// Опции
+	paramManager *ParamManager
+	debug        bool
 }
 
-func NewConnection(endpoint gomavlib.EndpointConf) *Connection {
+func NewConnection(endpoint gomavlib.EndpointConf, options ...ConnectionOption) *Connection {
 	conn := &Connection{
 		endpointConf: endpoint,
 	}
+
+	// Применяем каждую опцию
+	for _, option := range options {
+		option(conn)
+	}
+
 	return conn
 }
 
