@@ -2,7 +2,7 @@ package mavlink
 
 type ConnectionOption func(*Connection)
 
-// WithParamManager Опция для установки ParamManager
+// WithParamManager Опция для работы с параметрами
 func WithParamManager(pm *ParamManager) ConnectionOption {
 	return func(c *Connection) {
 		c.paramManager = pm
@@ -13,5 +13,12 @@ func WithParamManager(pm *ParamManager) ConnectionOption {
 func WithDebug(debug bool) ConnectionOption {
 	return func(c *Connection) {
 		c.debug = debug
+	}
+}
+
+// WithTelemetryManager Опция для работы с телеметрией
+func WithTelemetryManager(tm *TelemetryManager) ConnectionOption {
+	return func(c *Connection) {
+		c.telemetryManager = tm
 	}
 }

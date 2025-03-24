@@ -2,6 +2,7 @@ package mavlink
 
 import (
 	"fmt"
+	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"sync"
 	"time"
 )
@@ -91,6 +92,18 @@ func (pm *ParamManager) Get(name string) (*Param, bool) {
 	return param, exists
 }
 
+func (pm *ParamManager) GetParamId(param *Param) (string, bool) {
+	pm.mu.RLock()
+	defer pm.mu.RUnlock()
+
+	for name, p := range pm.params {
+		if param == p {
+			return name, true
+		}
+	}
+	return "", false
+}
+
 func (pm *ParamManager) Update(name string, value float32) bool {
 	pm.mu.RLock()
 	param, exists := pm.params[name]
@@ -114,4 +127,8 @@ func (pm *ParamManager) RegisterCallback(name string, callback func(float32)) bo
 		return true
 	}
 	return false
+}
+
+func (pm *ParamManager) HandleMessageParamValue(msg *ardupilotmega.MessageParamValue) {
+	pm.Update(msg.ParamId, msg.ParamValue)
 }

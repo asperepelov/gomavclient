@@ -9,6 +9,7 @@ import (
 )
 
 type Connection struct {
+	OutSystemID       byte
 	opened            bool      // Соединение открыто
 	parseErrorCounter int       // Счетчик ошибок парсинга
 	lastHeartbeat     time.Time // Время последнего heartbeat
@@ -17,13 +18,19 @@ type Connection struct {
 	node         *gomavlib.Node
 
 	// Опции
-	paramManager *ParamManager
-	debug        bool
+	paramManager     *ParamManager
+	telemetryManager *TelemetryManager
+	debug            bool
 }
 
-func NewConnection(endpoint gomavlib.EndpointConf, options ...ConnectionOption) *Connection {
+func NewConnection(
+	endpoint gomavlib.EndpointConf,
+	outSystemID byte,
+	options ...ConnectionOption,
+) *Connection {
 	conn := &Connection{
 		endpointConf: endpoint,
+		OutSystemID:  outSystemID,
 	}
 
 	// Применяем каждую опцию
@@ -52,7 +59,7 @@ func (c *Connection) Open() error {
 			Endpoints:        []gomavlib.EndpointConf{c.endpointConf},
 			Dialect:          ardupilotmega.Dialect,
 			OutVersion:       gomavlib.V2,
-			OutSystemID:      10,
+			OutSystemID:      c.OutSystemID,
 			HeartbeatDisable: true,
 		}
 		err := c.node.Initialize()

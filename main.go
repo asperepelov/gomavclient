@@ -3,29 +3,37 @@ package main
 import (
 	"fmt"
 	"github.com/bluenviron/gomavlib/v3"
+	"gomavclient/actions"
 	"gomavclient/mavlink"
 	"sync"
 	"time"
 )
 
 func main() {
+	// Телеметрия
+	telemetry := mavlink.NewTelemetryManager()
+
 	// Параметры
 	params := mavlink.NewParamManager()
-	parUser1 := params.Register("SCR_USER1")
-	parUser1.AddCallback(func(value float32) {
-		fmt.Println("callback SCR_USER1:", value)
+	ScrRebEnable := params.Register("SCR_REB_ENBL")
+	ScrRebEnable.AddCallback(func(value float32) {
+		fmt.Println("callback SCR_REB_ENBL:", value)
 	})
-	parUser2 := params.Register("callback SCR_USER2")
-	parUser2.AddCallback(func(value float32) {
-		fmt.Println("SCR_USER2:", value)
+	ScrRebMode := params.Register("SCR_REB_MODE")
+	ScrRebMode.AddCallback(func(value float32) {
+		fmt.Println("callback SCR_REB_MODE:", value)
 	})
+	goGoEnableParamId := "SCR_GOGO_ENBL"
+	ScrGoGoEnable := params.Register(goGoEnableParamId)
 
 	// Настройка соединения
 	//endpointConf := gomavlib.EndpointSerial{Device: "com4", Baud: 57600} // Serial конфигурация
 	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
 	connection := mavlink.NewConnection(
 		endpointConf,
+		10,
 		mavlink.WithParamManager(params),
+		mavlink.WithTelemetryManager(telemetry),
 		mavlink.WithDebug(true),
 	)
 	err := connection.Open()
@@ -34,6 +42,14 @@ func main() {
 	}
 	defer connection.Close()
 
+	// Действия при обновлении параметра
+	actionsManager := actions.NewActionManager(connection)
+	ScrGoGoEnable.AddCallback(func(value float32) {
+		fmt.Printf("GoGo %s: %.0f\n", goGoEnableParamId, value)
+		actionsManager.GoGo(goGoEnableParamId, value)
+	})
+
+	// Запуск горутин
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 

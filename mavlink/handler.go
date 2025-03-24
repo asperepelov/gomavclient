@@ -3,6 +3,7 @@ package mavlink
 import (
 	"github.com/bluenviron/gomavlib/v3"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
+	"github.com/bluenviron/gomavlib/v3/pkg/dialects/common"
 	"log"
 	"time"
 )
@@ -37,7 +38,19 @@ func (c *Connection) HandleEvents() {
 			//	msg.Servo5Raw, msg.Servo6Raw, msg.Servo7Raw, msg.Servo8Raw)
 
 			case *ardupilotmega.MessageParamValue:
-				c.handleParamValue(msg)
+				if c.paramManager != nil {
+					c.paramManager.HandleMessageParamValue(msg)
+				}
+
+			case *common.MessageGlobalPositionInt:
+				if c.telemetryManager != nil {
+					c.telemetryManager.HandleMessageGlobalPositionInt(msg)
+				}
+
+			case *common.MessageVfrHud:
+				if c.telemetryManager != nil {
+					c.telemetryManager.HandleMessageVfrHud(msg)
+				}
 			}
 		}
 	}
@@ -60,10 +73,4 @@ func (c *Connection) handleParseError(event gomavlib.EventParseError) {
 
 func (c *Connection) handleHeartbeat(msg *ardupilotmega.MessageHeartbeat) {
 	c.lastHeartbeat = time.Now()
-}
-
-func (c *Connection) handleParamValue(msg *ardupilotmega.MessageParamValue) {
-	if c.paramManager != nil {
-		c.paramManager.Update(msg.ParamId, msg.ParamValue)
-	}
 }
