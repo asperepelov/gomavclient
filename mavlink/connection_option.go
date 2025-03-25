@@ -19,6 +19,6 @@ func WithDebug(debug bool) ConnectionOption {
 // WithTelemetryManager Опция для работы с телеметрией
 func WithTelemetryManager(tm *TelemetryManager) ConnectionOption {
 	return func(c *Connection) {
-		c.telemetryManager = tm
+		c.TelemetryManager = tm
 	}
 }

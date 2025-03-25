@@ -43,13 +43,13 @@ func (c *Connection) HandleEvents() {
 				}
 
 			case *common.MessageGlobalPositionInt:
-				if c.telemetryManager != nil {
-					c.telemetryManager.HandleMessageGlobalPositionInt(msg)
+				if c.TelemetryManager != nil {
+					c.TelemetryManager.HandleMessageGlobalPositionInt(msg)
 				}
 
 			case *common.MessageVfrHud:
-				if c.telemetryManager != nil {
-					c.telemetryManager.HandleMessageVfrHud(msg)
+				if c.TelemetryManager != nil {
+					c.TelemetryManager.HandleMessageVfrHud(msg)
 				}
 			}
 		}

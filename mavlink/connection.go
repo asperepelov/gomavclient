@@ -19,7 +19,7 @@ type Connection struct {
 
 	// Опции
 	paramManager     *ParamManager
-	telemetryManager *TelemetryManager
+	TelemetryManager *TelemetryManager
 	debug            bool
 }
 
