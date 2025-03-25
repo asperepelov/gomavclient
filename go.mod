@@ -1,9 +1,14 @@
+//module github.com/asperepelov/gomavclient
 module gomavclient
 
 go 1.23
 
 require (
-	github.com/bluenviron/gomavlib/v3 v3.2.1 // indirect
+	github.com/bluenviron/gomavlib/v3 v3.2.1
+	github.com/stianeikeland/go-rpio/v4 v4.6.0
+)
+
+require (
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/pion/logging v0.2.2 // indirect
 	github.com/pion/transport/v2 v2.2.10 // indirect
