@@ -10,9 +10,6 @@ import (
 )
 
 func main() {
-	// Телеметрия
-	telemetry := mavlink.NewTelemetryManager()
-
 	// Параметры
 	params := mavlink.NewParamManager()
 	ScrRebEnable := params.Register("SCR_REB_ENBL")
@@ -33,7 +30,6 @@ func main() {
 		endpointConf,
 		10,
 		mavlink.WithParamManager(params),
-		mavlink.WithTelemetryManager(telemetry),
 		mavlink.WithDebug(true),
 	)
 	err := connection.Open()
