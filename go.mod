@@ -15,4 +15,6 @@ require (
 	go.bug.st/serial v1.6.2 // indirect
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
+	periph.io/x/conn/v3 v3.7.2 // indirect
+	periph.io/x/host/v3 v3.8.3 // indirect
 )

@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/bluenviron/gomavlib/v3"
-	"gomavclient/actions"
 	"gomavclient/mavlink"
+	"gomavclient/raspi"
+	"log"
 	"sync"
 	"time"
 )
@@ -12,18 +13,52 @@ import (
 func main() {
 	// Параметры
 	params := mavlink.NewParamManager()
-	ScrRebEnable := params.Register("SCR_REB_ENBL")
-	ScrRebEnable.AddCallback(func(value float32) {
-		fmt.Println("callback SCR_REB_ENBL:", value)
-	})
-	ScrRebMode := params.Register("SCR_REB_MODE")
-	ScrRebMode.AddCallback(func(value float32) {
-		fmt.Println("callback SCR_REB_MODE:", value)
-	})
-	goGoEnableParamId := "SCR_GOGO_ENBL"
-	ScrGoGoEnable := params.Register(goGoEnableParamId)
+	servoexp1 := params.Register("SERVOEXP1_PWM")
+	servoexp2 := params.Register("SERVOEXP2_PWM")
+	servoexp3 := params.Register("SERVOEXP3_PWM")
+	servoexp4 := params.Register("SERVOEXP4_PWM")
+	//servoexp5 := params.Register("SERVOEXP5_PWM")
+	//servoexp6 := params.Register("SERVOEXP6_PWM")
 
-	// Настройка соединения
+	// Инициализация аппаратного PWM
+	pins := []raspi.Pin{
+		{Name: "GPIO12", InitValue: 1000},
+		{Name: "GPIO13", InitValue: 1000},
+		{Name: "GPIO18", InitValue: 1000},
+		{Name: "GPIO19", InitValue: 1000},
+	}
+	hardwarePwm, err := raspi.NewHardwarePWMController(pins)
+	if err != nil {
+		log.Panic(fmt.Sprintf("Failed to create hardware PWM controller: %v", err))
+	}
+
+	// Добавление обработчиков значений параметров
+	servoexp1.AddCallback(func(value float32) {
+		err := hardwarePwm.SetPwm(raspi.ServoNumber(1), raspi.Pwm(value))
+		if err != nil {
+			log.Println(err)
+		}
+	})
+	servoexp2.AddCallback(func(value float32) {
+		err := hardwarePwm.SetPwm(raspi.ServoNumber(2), raspi.Pwm(value))
+		if err != nil {
+			log.Println(err)
+		}
+	})
+	servoexp3.AddCallback(func(value float32) {
+		err := hardwarePwm.SetPwm(raspi.ServoNumber(3), raspi.Pwm(value))
+		if err != nil {
+			log.Println(err)
+		}
+	})
+	servoexp4.AddCallback(func(value float32) {
+		err := hardwarePwm.SetPwm(raspi.ServoNumber(4), raspi.Pwm(value))
+		if err != nil {
+			log.Println(err)
+		}
+	})
+
+	// Настройка mavlink соединения
 	//endpointConf := gomavlib.EndpointSerial{Device: "com4", Baud: 57600} // Serial конфигурация
 	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
 	connection := mavlink.NewConnection(
@@ -32,18 +67,18 @@ func main() {
 		mavlink.WithParamManager(params),
 		mavlink.WithDebug(true),
 	)
-	err := connection.Open()
+	err = connection.Open()
 	if err != nil {
 		panic(err)
 	}
 	defer connection.Close()
 
 	// Действия при обновлении параметра
-	actionsManager := actions.NewActionManager(connection)
-	ScrGoGoEnable.AddCallback(func(value float32) {
-		fmt.Printf("GoGo %s: %.0f\n", goGoEnableParamId, value)
-		actionsManager.GoGo(goGoEnableParamId, value)
-	})
+	//actionsManager := actions.NewActionManager(connection)
+	//ScrGoGoEnable.AddCallback(func(value float32) {
+	//	fmt.Printf("GoGo %s: %.0f\n", goGoEnableParamId, value)
+	//	actionsManager.GoGo(goGoEnableParamId, value)
+	//})
 
 	// Запуск горутин
 	wg := sync.WaitGroup{}
