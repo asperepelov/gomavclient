@@ -60,7 +60,7 @@ func main() {
 
 	// Настройка mavlink соединения
 	//endpointConf := gomavlib.EndpointSerial{Device: "com4", Baud: 57600} // Serial конфигурация
-	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5601"} // TCP конфигурация
+	endpointConf := gomavlib.EndpointTCPClient{"127.0.0.1:5600"} // TCP конфигурация
 	connection := mavlink.NewConnection(
 		endpointConf,
 		10,
