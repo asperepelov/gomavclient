@@ -75,3 +75,19 @@ func (hc *HardwarePWMController) SetPwm(num ServoNumber, value Pwm) error {
 	}
 	return nil
 }
+
+func ListAvailablePins() {
+	// Инициализация хоста
+	if _, err := host.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Получение всех зарегистрированных GPIO
+	allPins := gpioreg.All()
+
+	fmt.Println("Доступные GPIO пины:")
+	for _, pin := range allPins {
+		// Вывод имени пина и его текущего состояния
+		fmt.Printf("Пин: %d - %s, Структура: %+v\n", pin.Number(), pin.Name(), pin)
+	}
+}
