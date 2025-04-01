@@ -35,10 +35,10 @@ func main() {
 	defer connection.Close()
 
 	// Действия при обновлении параметра
-	actionsManager := actions.NewActionManager(connection)
+	goGo := actions.NewGoGo(connection)
 	ScrGoGoEnable.AddCallback(func(value float32) {
 		fmt.Printf("GoGo %s: %.0f\n", goGoEnableParamId, value)
-		actionsManager.GoGo(goGoEnableParamId, value)
+		goGo.Run(goGoEnableParamId, value)
 	})
 
 	// Запуск горутин
