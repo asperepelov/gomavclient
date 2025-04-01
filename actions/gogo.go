@@ -28,12 +28,11 @@ func (m *GoGo) Run(goParamId string, goEnable float32) {
 		return
 	}
 
-	m.goGoStartLat = float32(m.connection.TelemetryManager.GlobalPositionInt.Lat)
-	m.goGoStartLon = float32(m.connection.TelemetryManager.GlobalPositionInt.Lon)
-	m.goGoStartAlt = float32(math.Round(float64(m.connection.TelemetryManager.VfrHud.Alt)))
-
 	if goEnable == 1 {
 		fmt.Println("GoGo started")
+		m.goGoStartLat = float32(m.connection.TelemetryManager.GlobalPositionInt.Lat)
+		m.goGoStartLon = float32(m.connection.TelemetryManager.GlobalPositionInt.Lon)
+		m.goGoStartAlt = float32(math.Round(float64(m.connection.TelemetryManager.VfrHud.Alt)))
 	} else if goEnable == 2 {
 		fmt.Println("GoGo new waypoint")
 		alt := float32(0)
