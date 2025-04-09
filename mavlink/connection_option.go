@@ -1,9 +1,11 @@
 package mavlink
 
+import "gomavclient/common"
+
 type ConnectionOption func(*Connection)
 
 // WithParamManager Опция для работы с параметрами
-func WithParamManager(pm *ParamManager) ConnectionOption {
+func WithParamManager(pm *common.ParamManager) ConnectionOption {
 	return func(c *Connection) {
 		c.paramManager = pm
 	}

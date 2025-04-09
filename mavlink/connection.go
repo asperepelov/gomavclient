@@ -5,6 +5,7 @@ import (
 	"github.com/bluenviron/gomavlib/v3"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"github.com/bluenviron/gomavlib/v3/pkg/message"
+	"gomavclient/common"
 	"time"
 )
 
@@ -18,7 +19,7 @@ type Connection struct {
 	node         *gomavlib.Node
 
 	// Опции
-	paramManager     *ParamManager
+	paramManager     *common.ParamManager
 	TelemetryManager *TelemetryManager
 	debug            bool
 }

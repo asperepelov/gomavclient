@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/bluenviron/gomavlib/v3"
+	"gomavclient/common"
 	"gomavclient/mavlink"
 	"sync"
 	"time"
@@ -10,7 +11,7 @@ import (
 
 func main() {
 	// Параметры
-	params := mavlink.NewParamManager()
+	params := common.NewParamManager()
 	parUser1 := params.Register("SCR_USER1")
 	parUser1.AddCallback(func(value float32) {
 		fmt.Println("callback SCR_USER1:", value)

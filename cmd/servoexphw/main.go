@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/bluenviron/gomavlib/v3"
+	"gomavclient/common"
 	"gomavclient/mavlink"
 	"gomavclient/raspi"
 	"log"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	// Параметры
-	params := mavlink.NewParamManager()
+	params := common.NewParamManager()
 	servoexp1 := params.Register("SERVOEXP1_PWM")
 	servoexp2 := params.Register("SERVOEXP2_PWM")
 	servoexp3 := params.Register("SERVOEXP3_PWM")

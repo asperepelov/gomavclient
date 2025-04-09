@@ -1,6 +1,7 @@
-package mavlink
+package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"sync"
@@ -9,29 +10,27 @@ import (
 
 // Param параметр
 type Param struct {
-	value       float32         // Значение параметра
-	lastUpdated *time.Time      // Время последнего обновления
+	Name        string          `json:"name"`         // Имя параметра
+	Value       float32         `json:"value"`        // Значение параметра
+	LastUpdated *time.Time      `json:"last_updated"` // Время последнего обновления
 	callbacks   []func(float32) // Список обратных вызовов
 	mu          sync.RWMutex    // Мьютекс
 }
 
-func (p *Param) Get() (float32, *time.Time) {
-	p.mu.RLock()
-	defer p.mu.RUnlock()
-	return p.value, p.lastUpdated
+func NewParam(name string) *Param {
+	return &Param{Name: name}
 }
 
-func (p *Param) GetValue() float32 {
-	value, _ := p.Get()
-	return value
+func (p *Param) JSON() ([]byte, error) {
+	return json.Marshal(p)
 }
 
 // Update обновить значения параметра
 func (p *Param) Update(newValue float32) {
 	p.mu.Lock()
-	p.value = newValue
+	p.Value = newValue
 	now := time.Now()
-	p.lastUpdated = &now
+	p.LastUpdated = &now
 	callbacks := make([]func(float32), len(p.callbacks))
 	copy(callbacks, p.callbacks)
 	p.mu.Unlock()
@@ -79,7 +78,7 @@ func (pm *ParamManager) Register(name string) *Param {
 	defer pm.mu.Unlock()
 
 	if _, exists := pm.params[name]; !exists {
-		pm.params[name] = &Param{}
+		pm.params[name] = NewParam(name)
 	}
 	return pm.params[name]
 }
@@ -90,18 +89,6 @@ func (pm *ParamManager) Get(name string) (*Param, bool) {
 
 	param, exists := pm.params[name]
 	return param, exists
-}
-
-func (pm *ParamManager) GetParamId(param *Param) (string, bool) {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-
-	for name, p := range pm.params {
-		if param == p {
-			return name, true
-		}
-	}
-	return "", false
 }
 
 func (pm *ParamManager) Update(name string, value float32) bool {
