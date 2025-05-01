@@ -7,15 +7,16 @@ import (
 	"gomavclient/actions"
 	"gomavclient/common"
 	"gomavclient/mavlink"
+	"log"
 	"sync"
 	"time"
 )
 
 const (
-	broker    = "tcp://localhost:1883"
-	clientID  = "svc-shield"
-	paramPub  = "svc/shield/param"     // Publication
-	dangerSub = "svc/freq_scan/danger" // Subscription
+	broker     = "tcp://localhost:1883"
+	clientID   = "svc-shield"
+	paramPub   = "svc/shield/param/out"  // Publication
+	commandSub = "svc/shield/command/in" // Subscription
 )
 
 func main() {
@@ -25,9 +26,6 @@ func main() {
 	if token := mqttClient.Connect(); token.Wait() && token.Error() != nil {
 		panic(token.Error())
 	}
-	// Подписка на тревогу
-	var dangerHandler mqtt.MessageHandler
-	mqttClient.Subscribe(dangerSub, 1, dangerHandler)
 
 	// Параметры mavlink
 	mavParams := common.NewParamManager()
@@ -62,23 +60,33 @@ func main() {
 	}
 
 	// Действия при обновлении параметра
-	parScanEnable.AddCallback(func(float32) { sendParamMqtt(parScanEnable) })
 	parRebAuto.AddCallback(func(float32) { sendParamMqtt(parRebAuto) })
 	parGoGoAuto.AddCallback(func(float32) { sendParamMqtt(parGoGoAuto) })
 	parRebRun.AddCallback(func(float32) { sendParamMqtt(parRebRun) })
 
+	// Вкл / Выкл RF
+	rfSwitchOn := actions.NewRFSwitchOn("rf.service")
+	parScanEnable.AddCallback(func(value float32) {
+		rfSwitchOn.HandleParamValue(value)
+		sendParamMqtt(parScanEnable)
+	})
+
+	// Вкл / Выкл GoGo
 	goGo := actions.NewGoGo(connection)
 	parAndrGoGoRun.AddCallback(func(value float32) {
-		fmt.Printf("GoGo %s: %.0f\n", parAndrGoGoRun.Name, value)
 		goGo.HandleParamValue(parAndrGoGoRun.Name, value)
 		sendParamMqtt(parAndrGoGoRun)
 	})
 
-	// Обработка получения тревоги
-	dangerHandler = func(client mqtt.Client, msg mqtt.Message) {
-		fmt.Printf("Получена тревога: %s\n", msg.Payload())
-		goGo.Enable(parAndrGoGoRun.Name)
+	// Обработка получения команд
+	commandHandler := func(client mqtt.Client, msg mqtt.Message) {
+		cmd := string(msg.Payload())
+		log.Printf("Получена команда: %s\n", cmd)
+		if cmd == "gogo" && parAndrGoGoRun.Value == 0 {
+			goGo.Enable(parAndrGoGoRun.Name)
+		}
 	}
+	mqttClient.Subscribe(commandSub, 1, commandHandler)
 
 	// Запуск горутин
 	wg := sync.WaitGroup{}
