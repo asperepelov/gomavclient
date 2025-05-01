@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -16,6 +17,8 @@ const (
 
 type GoGo struct {
 	connection *mavlink.Connection
+	mu         sync.Mutex
+	step       uint8
 
 	goGoStartHeading  int16
 	goGoStartLat      float32
@@ -27,6 +30,7 @@ type GoGo struct {
 func NewGoGo(connection *mavlink.Connection) *GoGo {
 	return &GoGo{
 		connection: connection,
+		step:       0,
 	}
 }
 
@@ -47,12 +51,28 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 	}
 
 	if goEnable == 1 {
+		m.mu.Lock()
+		if m.step != 0 {
+			m.mu.Unlock()
+			return
+		}
+		m.step = 1
+
 		fmt.Println("GoGo started")
 		m.goGoStartHeading = m.connection.TelemetryManager.Heading
 		m.goGoStartLat = m.connection.TelemetryManager.Lat
 		m.goGoStartLon = m.connection.TelemetryManager.Lon
 		m.goGoStartAlt = float32(math.Round(float64(m.connection.TelemetryManager.VfrHud.Alt)))
+
+		m.mu.Unlock()
 	} else if goEnable == 2 {
+		m.mu.Lock()
+		if m.step != 1 {
+			m.mu.Unlock()
+			return
+		}
+		m.step = 2
+
 		fmt.Println("GoGo new waypoint")
 		alt := float32(0)
 		if m.goGoStartAlt-50 > 0 {
@@ -78,8 +98,16 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 		if err != nil {
 			fmt.Printf("Error GoGo param set: %v", err)
 		}
+
+		m.mu.Unlock()
 	} else if m.goGoNeedRestoreWP && goEnable == 0 {
-		fmt.Println("GoGo restore waypoint")
+		m.mu.Lock()
+		if m.step != 2 {
+			m.mu.Unlock()
+			return
+		}
+		m.step = 0
+
 		m.goGoNeedRestoreWP = false
 
 		// точка впереди по курсу
@@ -95,6 +123,8 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 		if err != nil {
 			log.Printf("GoGo write MissionItem error : %v", err)
 		}
+
+		m.mu.Unlock()
 	}
 }
 

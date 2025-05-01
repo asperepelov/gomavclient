@@ -1,3 +1,10 @@
 .idea/gomavclient.iml
 .idea/modules.xml
 .idea/vcs.xml
+\!conf.txt
+main.exe
+antidron.exe
+bin/build_linux.ps1
+bin/servoexp
+bin/servoexp.exe
+bin/build_windows.ps1
