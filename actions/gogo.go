@@ -25,12 +25,16 @@ type GoGo struct {
 	goGoStartLon      float32
 	goGoStartAlt      float32
 	goGoNeedRestoreWP bool
+	changeAlt         *float32
+	courseDeg         *float32
 }
 
-func NewGoGo(connection *mavlink.Connection) *GoGo {
+func NewGoGo(connection *mavlink.Connection, _changeAlt *float32, _courseDeg *float32) *GoGo {
 	return &GoGo{
 		connection: connection,
 		step:       0,
+		changeAlt:  _changeAlt,
+		courseDeg:  _courseDeg,
 	}
 }
 
@@ -75,8 +79,8 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 
 		fmt.Println("GoGo new waypoint")
 		alt := float32(0)
-		if m.goGoStartAlt-50 > 0 {
-			alt = m.goGoStartAlt - 50
+		if m.goGoStartAlt-*m.changeAlt > 0 {
+			alt = m.goGoStartAlt - *m.changeAlt
 		}
 		m.goGoNeedRestoreWP = true
 
@@ -84,19 +88,20 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 		sideLat, sideLon, side := CalculatePointSide(
 			float64(m.goGoStartHeading),
 			float64(m.goGoStartLat),
-			float64(m.goGoStartLon))
-		log.Println("Манёвр", side)
+			float64(m.goGoStartLon),
+			float64(*m.courseDeg))
+		log.Printf("Манёвр %s со снижением на %d и отклонением от курса на %d град", side, int(*m.changeAlt), int(*m.courseDeg))
 
 		msg := mavlink.GetMissionItem(&mavlink.GeoPoint{Lat: sideLat, Lng: sideLon, Alt: alt})
-		fmt.Printf("GoGo new waypoint: %v", msg)
+		fmt.Printf("GoGo new waypoint: %v\n", msg)
 		err := m.connection.Write(msg)
 		if err != nil {
-			fmt.Printf("GoGo write MissionItem error : %v", err)
+			fmt.Printf("GoGo write MissionItem error : %v\n", err)
 		}
 		// Передача управления скрипту
 		err = m.connection.Write(mavlink.GetMessageParamSet(goParamId, 3))
 		if err != nil {
-			fmt.Printf("Error GoGo param set: %v", err)
+			fmt.Printf("Error GoGo param set: %v\n", err)
 		}
 
 		m.mu.Unlock()
@@ -155,8 +160,8 @@ func CalculatePointAhead(heading, lat, lon float64) (float32, float32) {
 }
 
 // CalculatePointSide вычисляет координаты точки, находящейся на заданном расстоянии
-// слева или справа от курса
-func CalculatePointSide(heading, lat, lon float64) (float32, float32, string) {
+// слева или справа от курса с отклонением на courseDeg
+func CalculatePointSide(heading, lat, lon float64, courseDeg float64) (float32, float32, string) {
 	// Инициализация генератора случайных чисел
 	rand.Seed(time.Now().UnixNano())
 
@@ -164,13 +169,13 @@ func CalculatePointSide(heading, lat, lon float64) (float32, float32, string) {
 	side := rand.Intn(2)
 	sideDescription := "вправо"
 
-	// Если левая сторона, корректируем курс на 90 градусов против часовой стрелки
-	// Если правая сторона, корректируем курс на 90 градусов по часовой стрелке
+	// Если левая сторона, корректируем курс на courseDeg градусов против часовой стрелки
+	// Если правая сторона, корректируем курс на courseDeg градусов по часовой стрелке
 	if side == 0 {
-		heading = math.Mod(heading-90+360, 360)
+		heading = math.Mod(heading-courseDeg+360, 360)
 		sideDescription = "влево"
 	} else {
-		heading = math.Mod(heading+90, 360)
+		heading = math.Mod(heading+courseDeg, 360)
 	}
 
 	// Используем ту же функцию для расчета точки по новому направлению

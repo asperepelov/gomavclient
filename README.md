@@ -1,7 +1,9 @@
 # gomavclient
 Client of mavlink
 
-Для компиляции под Linux на Windows:
+Для работы может потребоваться брокер сообщений mosquitto https://mosquitto.org/download/
+
+## Для компиляции под Linux на Windows:
 1. Узнать архитектуру системы linux:
 ```shell
 uname -m

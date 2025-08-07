@@ -11,10 +11,13 @@ type GeoPoint struct {
 	Alt float32 // Altitude в метрах
 }
 
+const TargetSystem uint8 = 1
+const TargetComponent uint8 = 1
+
 func GetMissionItem(wp *GeoPoint) *ardupilotmega.MessageMissionItem {
 	return &ardupilotmega.MessageMissionItem{
-		TargetSystem:    1,
-		TargetComponent: 1,
+		TargetSystem:    TargetSystem,
+		TargetComponent: TargetComponent,
 		Seq:             0,
 		Frame:           ardupilotmega.MAV_FRAME_GLOBAL_RELATIVE_ALT,
 		Command:         common.MAV_CMD(ardupilotmega.MAV_CMD_NAV_WAYPOINT),
@@ -33,9 +36,18 @@ func GetMissionItem(wp *GeoPoint) *ardupilotmega.MessageMissionItem {
 
 func GetMessageParamSet(paramId string, value float32) *common.MessageParamSet {
 	return &common.MessageParamSet{
-		TargetSystem:    1,
-		TargetComponent: 1,
+		TargetSystem:    TargetSystem,
+		TargetComponent: TargetComponent,
 		ParamId:         paramId,
 		ParamValue:      value,
+	}
+}
+
+func GetMessageParamRequestRead(paramId string) *common.MessageParamRequestRead {
+	return &common.MessageParamRequestRead{
+		TargetSystem:    TargetSystem,
+		TargetComponent: TargetComponent,
+		ParamId:         paramId,
+		ParamIndex:      -1,
 	}
 }

@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/bluenviron/gomavlib/v3/pkg/dialects/ardupilotmega"
 	"sync"
 	"time"
 )
@@ -15,10 +14,21 @@ type Param struct {
 	LastUpdated *time.Time      `json:"last_updated"` // Время последнего обновления
 	callbacks   []func(float32) // Список обратных вызовов
 	mu          sync.RWMutex    // Мьютекс
+
+	// Опции
+	UploadStartup    bool          // Загрузка значения при старте
+	RefreshPeriodSec time.Duration // Период считывания сек
 }
 
-func NewParam(name string) *Param {
-	return &Param{Name: name}
+func NewParam(name string, options ...ParamOption) *Param {
+	param := &Param{Name: name}
+
+	// Применяем каждую опцию
+	for _, option := range options {
+		option(param)
+	}
+
+	return param
 }
 
 func (p *Param) JSON() ([]byte, error) {
@@ -60,62 +70,4 @@ func (p *Param) RemoveCallback(callback func(float32)) {
 			break
 		}
 	}
-}
-
-type ParamManager struct {
-	params map[string]*Param
-	mu     sync.RWMutex
-}
-
-func NewParamManager() *ParamManager {
-	return &ParamManager{
-		params: make(map[string]*Param),
-	}
-}
-
-func (pm *ParamManager) Register(name string) *Param {
-	pm.mu.Lock()
-	defer pm.mu.Unlock()
-
-	if _, exists := pm.params[name]; !exists {
-		pm.params[name] = NewParam(name)
-	}
-	return pm.params[name]
-}
-
-func (pm *ParamManager) Get(name string) (*Param, bool) {
-	pm.mu.RLock()
-	defer pm.mu.RUnlock()
-
-	param, exists := pm.params[name]
-	return param, exists
-}
-
-func (pm *ParamManager) Update(name string, value float32) bool {
-	pm.mu.RLock()
-	param, exists := pm.params[name]
-	pm.mu.RUnlock()
-
-	if exists {
-		fmt.Println("Update param:", name, value)
-		param.Update(value)
-		return true
-	}
-	return false
-}
-
-func (pm *ParamManager) RegisterCallback(name string, callback func(float32)) bool {
-	pm.mu.RLock()
-	param, exists := pm.params[name]
-	pm.mu.RUnlock()
-
-	if exists {
-		param.AddCallback(callback)
-		return true
-	}
-	return false
-}
-
-func (pm *ParamManager) HandleMessageParamValue(msg *ardupilotmega.MessageParamValue) {
-	pm.Update(msg.ParamId, msg.ParamValue)
 }

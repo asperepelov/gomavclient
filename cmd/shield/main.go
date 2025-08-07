@@ -47,11 +47,13 @@ func main() {
 	defer connection.Close()
 
 	// Отслеживаемые параметры mavlink
-	parScanEnable := mavParams.Register("ANDR_SCAN_ENBL")
-	parRebAuto := mavParams.Register("ANDR_REB_AUTO")
-	parGoGoAuto := mavParams.Register("ANDR_GOGO_AUTO")
-	parRebRun := mavParams.Register("ANDR_REB_RUN")
-	parAndrGoGoRun := mavParams.Register("ANDR_GOGO_RUN")
+	parScanEnable := mavParams.Register("ANDR_SCAN_ENBL", common.WithUploadStartup(true))
+	parRebAuto := mavParams.Register("ANDR_REB_AUTO", common.WithUploadStartup(true))
+	parGoGoAuto := mavParams.Register("ANDR_GOGO_AUTO", common.WithUploadStartup(true))
+	parRebRun := mavParams.Register("ANDR_REB_RUN", common.WithUploadStartup(true))
+	parAndrGoGoRun := mavParams.Register("ANDR_GOGO_RUN", common.WithUploadStartup(true))
+	parAndrCourseDeg := mavParams.Register("ANDR_COURSEDEG", common.WithUploadStartup(true))
+	parAndrChangeAlt := mavParams.Register("ANDR_CHANGEALT", common.WithUploadStartup(true))
 
 	// Публикация значения параметра
 	sendParamMqtt := func(param *common.Param) {
@@ -63,6 +65,10 @@ func main() {
 	parRebAuto.AddCallback(func(float32) { sendParamMqtt(parRebAuto) })
 	parGoGoAuto.AddCallback(func(float32) { sendParamMqtt(parGoGoAuto) })
 	parRebRun.AddCallback(func(float32) { sendParamMqtt(parRebRun) })
+	var changeAlt float32
+	parAndrChangeAlt.AddCallback(func(f float32) { changeAlt = f })
+	var courseDeg float32
+	parAndrCourseDeg.AddCallback(func(f float32) { courseDeg = f })
 
 	// Вкл / Выкл RF
 	rfSwitchOn := actions.NewRFSwitchOn("rf.service")
@@ -72,7 +78,7 @@ func main() {
 	})
 
 	// Вкл / Выкл GoGo
-	goGo := actions.NewGoGo(connection)
+	goGo := actions.NewGoGo(connection, &changeAlt, &courseDeg)
 	parAndrGoGoRun.AddCallback(func(value float32) {
 		goGo.HandleParamValue(parAndrGoGoRun.Name, value)
 		sendParamMqtt(parAndrGoGoRun)
@@ -88,9 +94,10 @@ func main() {
 	}
 	mqttClient.Subscribe(commandSub, 1, commandHandler)
 
+	//////////////////////////////////////////
 	// Запуск горутин
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(4)
 
 	// Горутина для обработки mavlink сообщений
 	go func() {
@@ -98,11 +105,49 @@ func main() {
 		connection.HandleEvents()
 	}()
 
+	// Горутина для стартовой загрузки параметров
+	go func() {
+		defer wg.Done()
+		for {
+			params := mavParams.GetParamsToUploadStartup()
+			if len(params) == 0 {
+				break
+			}
+
+			for _, param := range params {
+				fmt.Println("Обновление при старте", param.Name)
+				err := connection.Write(mavlink.GetMessageParamRequestRead(param.Name))
+				if err != nil {
+					fmt.Printf("%v\n", err)
+				}
+			}
+			time.Sleep(3 * time.Second)
+		}
+	}()
+
+	// Горутина для обновления параметров
+	go func() {
+		defer wg.Done()
+		for {
+			params := mavParams.GetParamsToRefresh()
+
+			for _, param := range params {
+				fmt.Println("Пора обновить", param.Name)
+				err := connection.Write(mavlink.GetMessageParamRequestRead(param.Name))
+				if err != nil {
+					fmt.Printf("%v\n", err)
+				}
+			}
+			time.Sleep(1 * time.Second)
+		}
+	}()
+
+	// Статус сервиса
 	go func() {
 		for {
 			defer wg.Done()
 			fmt.Println(connection.Info())
-			time.Sleep(1 * time.Hour)
+			time.Sleep(15 * time.Minute)
 		}
 	}()
 
