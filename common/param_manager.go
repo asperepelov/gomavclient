@@ -81,8 +81,8 @@ func (pm *ParamManager) GetParamsToRefresh() []*Param {
 	var params []*Param
 	for _, param := range pm.params {
 		// Не пора ли обновить параметр
-		if param.RefreshPeriodSec > 0 {
-			if param.LastUpdated == nil || time.Now().Sub(*param.LastUpdated) > param.RefreshPeriodSec {
+		if param.RefreshPeriod > 0 {
+			if param.LastUpdated == nil || time.Now().Sub(*param.LastUpdated) > param.RefreshPeriod {
 				params = append(params, param)
 			}
 		}

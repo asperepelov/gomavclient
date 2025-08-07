@@ -12,8 +12,8 @@ func WithUploadStartup(uploadStartup bool) ParamOption {
 }
 
 // WithRefreshPeriod Период считывания значения, если очень критично
-func WithRefreshPeriod(refreshPeriodSec time.Duration) ParamOption {
+func WithRefreshPeriod(refreshPeriod time.Duration) ParamOption {
 	return func(param *Param) {
-		param.RefreshPeriodSec = refreshPeriodSec
+		param.RefreshPeriod = refreshPeriod
 	}
 }

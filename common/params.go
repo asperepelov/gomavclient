@@ -16,8 +16,8 @@ type Param struct {
 	mu          sync.RWMutex    // Мьютекс
 
 	// Опции
-	UploadStartup    bool          // Загрузка значения при старте
-	RefreshPeriodSec time.Duration // Период считывания сек
+	UploadStartup bool          // Загрузка значения при старте
+	RefreshPeriod time.Duration // Период считывания
 }
 
 func NewParam(name string, options ...ParamOption) *Param {
