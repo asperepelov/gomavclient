@@ -27,6 +27,12 @@ func (c *Connection) HandleEvents() {
 
 		// Событие кадр данных
 		if frm, ok := event.(*gomavlib.EventFrame); ok {
+
+			// Обработка событий телеметрии
+			if c.TelemetryManager != nil {
+				c.TelemetryManager.OnMessage(frm.Message())
+			}
+
 			switch msg := frm.Message().(type) {
 
 			case *ardupilotmega.MessageHeartbeat:
@@ -45,6 +51,11 @@ func (c *Connection) HandleEvents() {
 			case *common.MessageGlobalPositionInt:
 				if c.TelemetryManager != nil {
 					c.TelemetryManager.HandleMessageGlobalPositionInt(msg)
+				}
+
+			case *common.MessageGpsRawInt:
+				if c.TelemetryManager != nil {
+					c.TelemetryManager.HandleMessageGpsRawInt(msg)
 				}
 
 			case *common.MessageVfrHud:
