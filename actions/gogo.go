@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	earthRadius = 6371.0 // радиус Земли в километрах
-	distance    = 30.0   // расстояние в километрах
+	earthRadius   = 6371.0 // радиус Земли в километрах
+	distanceSide  = 0.5    // расстояние вбок в километрах
+	distanceAhead = 1      // расстояние вперед в километрах
 )
 
 type GoGo struct {
@@ -54,28 +55,19 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 		return
 	}
 
-	if goEnable == 1 {
+	if goEnable == 2 {
 		m.mu.Lock()
 		if m.step != 0 {
 			m.mu.Unlock()
 			return
 		}
-		m.step = 1
+		m.step = 2
 
 		fmt.Println("GoGo started")
 		m.goGoStartHeading = m.connection.TelemetryManager.Heading
 		m.goGoStartLat = m.connection.TelemetryManager.Lat
 		m.goGoStartLon = m.connection.TelemetryManager.Lon
 		m.goGoStartAlt = float32(math.Round(float64(m.connection.TelemetryManager.VfrHud.Alt)))
-
-		m.mu.Unlock()
-	} else if goEnable == 2 {
-		m.mu.Lock()
-		if m.step != 1 {
-			m.mu.Unlock()
-			return
-		}
-		m.step = 2
 
 		fmt.Println("GoGo new waypoint")
 		alt := float32(0)
@@ -89,7 +81,8 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 			float64(m.goGoStartHeading),
 			float64(m.goGoStartLat),
 			float64(m.goGoStartLon),
-			float64(*m.courseDeg))
+			float64(*m.courseDeg),
+			distanceSide)
 		log.Printf("Манёвр %s со снижением на %d и отклонением от курса на %d град", side, int(*m.changeAlt), int(*m.courseDeg))
 
 		msg := mavlink.GetMissionItem(&mavlink.GeoPoint{Lat: sideLat, Lng: sideLon, Alt: alt})
@@ -119,7 +112,8 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 		aheadLat, aheadLon := CalculatePointAhead(
 			float64(m.goGoStartHeading),
 			float64(m.goGoStartLat),
-			float64(m.goGoStartLon))
+			float64(m.goGoStartLon),
+			distanceAhead)
 
 		// выход из манёвра
 		msg := mavlink.GetMissionItem(&mavlink.GeoPoint{Lat: aheadLat, Lng: aheadLon, Alt: m.goGoStartAlt})
@@ -135,7 +129,7 @@ func (m *GoGo) HandleParamValue(goParamId string, goEnable float32) {
 
 // CalculatePointAhead вычисляет координаты точки, находящейся на заданном расстоянии
 // впереди по курсу от текущей позиции
-func CalculatePointAhead(heading, lat, lon float64) (float32, float32) {
+func CalculatePointAhead(heading, lat, lon, distance float64) (float32, float32) {
 	// Перевод градусов в радианы
 	lat1 := lat * math.Pi / 180.0
 	lon1 := lon * math.Pi / 180.0
@@ -161,7 +155,7 @@ func CalculatePointAhead(heading, lat, lon float64) (float32, float32) {
 
 // CalculatePointSide вычисляет координаты точки, находящейся на заданном расстоянии
 // слева или справа от курса с отклонением на courseDeg
-func CalculatePointSide(heading, lat, lon float64, courseDeg float64) (float32, float32, string) {
+func CalculatePointSide(heading, lat, lon, distance float64, courseDeg float64) (float32, float32, string) {
 	// Инициализация генератора случайных чисел
 	rand.Seed(time.Now().UnixNano())
 
@@ -179,7 +173,7 @@ func CalculatePointSide(heading, lat, lon float64, courseDeg float64) (float32, 
 	}
 
 	// Используем ту же функцию для расчета точки по новому направлению
-	lat2, lon2 := CalculatePointAhead(heading, lat, lon)
+	lat2, lon2 := CalculatePointAhead(heading, lat, lon, distance)
 
 	return lat2, lon2, sideDescription
 }
