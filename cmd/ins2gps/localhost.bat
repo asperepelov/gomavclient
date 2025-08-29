@@ -1,0 +1,1 @@
+ins2gps.exe -address="127.0.0.1:5600" -serial="com17"
